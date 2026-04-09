@@ -260,3 +260,214 @@ def project_lifetime_taxes(
         projections['effective_rate'].append(tax_calc['effective_rate'])
 
     return projections
+
+
+def calculate_pension_income_splitting(
+    person1_pension_income: float,
+    person2_pension_income: float,
+    person1_other_income: float,
+    person2_other_income: float,
+    person1_age: int,
+    person2_age: int,
+) -> dict:
+    """
+    Calculate optimal pension income splitting for couples to minimize household tax.
+
+    Canadian tax rules:
+    - Both spouses must be 65+
+    - Can split up to 50% of eligible pension income (RRSP/RRIF/pension)
+    - Each person files separately, but can allocate pension income
+    - Goal: Minimize combined household tax
+
+    Args:
+        person1_pension_income: Eligible pension income for person 1 (RRSP/RRIF)
+        person2_pension_income: Eligible pension income for person 2 (RRSP/RRIF)
+        person1_other_income: Other income for person 1 (CPP, OAS, employment)
+        person2_other_income: Other income for person 2 (CPP, OAS, employment)
+        person1_age: Age of person 1
+        person2_age: Age of person 2
+
+    Returns:
+        Dictionary with:
+        - optimal_split_ratio: Optimal split ratio (0.0 to 0.5)
+        - person1_allocated_pension: Pension income allocated to person 1
+        - person2_allocated_pension: Pension income allocated to person 2
+        - person1_total_income: Total income for person 1 after splitting
+        - person2_total_income: Total income for person 2 after splitting
+        - person1_tax: Tax paid by person 1 after splitting
+        - person2_tax: Tax paid by person 2 after splitting
+        - total_household_tax: Combined household tax
+        - tax_savings: Savings vs no splitting
+    """
+    # Check eligibility
+    if person1_age < 65 or person2_age < 65:
+        # Not eligible for income splitting
+        person1_total = person1_pension_income + person1_other_income
+        person2_total = person2_pension_income + person2_other_income
+        person1_tax_calc = calculate_total_tax(person1_total, person1_age, person1_pension_income)
+        person2_tax_calc = calculate_total_tax(person2_total, person2_age, person2_pension_income)
+
+        return {
+            'optimal_split_ratio': 0.0,
+            'person1_allocated_pension': person1_pension_income,
+            'person2_allocated_pension': person2_pension_income,
+            'person1_total_income': person1_total,
+            'person2_total_income': person2_total,
+            'person1_tax': person1_tax_calc['total_tax'],
+            'person2_tax': person2_tax_calc['total_tax'],
+            'total_household_tax': person1_tax_calc['total_tax'] + person2_tax_calc['total_tax'],
+            'tax_savings': 0.0,
+            'eligible_for_splitting': False,
+        }
+
+    # Calculate baseline tax (no splitting)
+    person1_baseline_income = person1_pension_income + person1_other_income
+    person2_baseline_income = person2_pension_income + person2_other_income
+    person1_baseline_tax = calculate_total_tax(person1_baseline_income, person1_age, person1_pension_income)['total_tax']
+    person2_baseline_tax = calculate_total_tax(person2_baseline_income, person2_age, person2_pension_income)['total_tax']
+    baseline_total_tax = person1_baseline_tax + person2_baseline_tax
+
+    # Binary search for optimal split ratio
+    # We'll search for the ratio that minimizes total household tax
+    best_ratio = 0.0
+    best_total_tax = baseline_total_tax
+    best_result = {
+        'person1_allocated_pension': person1_pension_income,
+        'person2_allocated_pension': person2_pension_income,
+        'person1_total_income': person1_baseline_income,
+        'person2_total_income': person2_baseline_income,
+        'person1_tax': person1_baseline_tax,
+        'person2_tax': person2_baseline_tax,
+    }
+
+    # Try different split ratios from 0% to 50% (in 1% increments for precision)
+    for split_pct in range(0, 51, 1):
+        split_ratio = split_pct / 100.0
+
+        # Person 1 transfers split_ratio of their pension to Person 2
+        # Person 2 transfers split_ratio of their pension to Person 1
+        person1_pension_after_split = person1_pension_income * (1 - split_ratio) + person2_pension_income * split_ratio
+        person2_pension_after_split = person2_pension_income * (1 - split_ratio) + person1_pension_income * split_ratio
+
+        person1_total = person1_pension_after_split + person1_other_income
+        person2_total = person2_pension_after_split + person2_other_income
+
+        person1_tax = calculate_total_tax(person1_total, person1_age, person1_pension_after_split)['total_tax']
+        person2_tax = calculate_total_tax(person2_total, person2_age, person2_pension_after_split)['total_tax']
+        total_tax = person1_tax + person2_tax
+
+        if total_tax < best_total_tax:
+            best_total_tax = total_tax
+            best_ratio = split_ratio
+            best_result = {
+                'person1_allocated_pension': person1_pension_after_split,
+                'person2_allocated_pension': person2_pension_after_split,
+                'person1_total_income': person1_total,
+                'person2_total_income': person2_total,
+                'person1_tax': person1_tax,
+                'person2_tax': person2_tax,
+            }
+
+    tax_savings = baseline_total_tax - best_total_tax
+
+    return {
+        'optimal_split_ratio': best_ratio,
+        'person1_allocated_pension': best_result['person1_allocated_pension'],
+        'person2_allocated_pension': best_result['person2_allocated_pension'],
+        'person1_total_income': best_result['person1_total_income'],
+        'person2_total_income': best_result['person2_total_income'],
+        'person1_tax': best_result['person1_tax'],
+        'person2_tax': best_result['person2_tax'],
+        'total_household_tax': best_total_tax,
+        'tax_savings': tax_savings,
+        'eligible_for_splitting': True,
+    }
+
+
+def calculate_household_tax(
+    person1_income: float,
+    person1_age: int,
+    person1_rrsp_withdrawal: float,
+    person2_income: float,
+    person2_age: int,
+    person2_rrsp_withdrawal: float,
+    apply_income_splitting: bool = True,
+) -> dict:
+    """
+    Calculate combined household tax with optional income splitting.
+
+    Args:
+        person1_income: Total annual income for person 1
+        person1_age: Age of person 1
+        person1_rrsp_withdrawal: RRSP/RRIF withdrawal for person 1
+        person2_income: Total annual income for person 2
+        person2_age: Age of person 2
+        person2_rrsp_withdrawal: RRSP/RRIF withdrawal for person 2
+        apply_income_splitting: Whether to apply income splitting optimization
+
+    Returns:
+        Dictionary with:
+        - person1_tax: Tax paid by person 1
+        - person2_tax: Tax paid by person 2
+        - total_household_tax: Combined household tax
+        - income_splitting_applied: Whether splitting was applied
+        - income_splitting_savings: Tax savings from splitting
+        - person1_details: Detailed tax breakdown for person 1
+        - person2_details: Detailed tax breakdown for person 2
+    """
+    # Calculate other income (non-RRSP) for income splitting
+    person1_other_income = person1_income - person1_rrsp_withdrawal
+    person2_other_income = person2_income - person2_rrsp_withdrawal
+
+    if apply_income_splitting and person1_age >= 65 and person2_age >= 65 and (person1_rrsp_withdrawal > 0 or person2_rrsp_withdrawal > 0):
+        # Apply income splitting optimization
+        splitting_result = calculate_pension_income_splitting(
+            person1_rrsp_withdrawal,
+            person2_rrsp_withdrawal,
+            person1_other_income,
+            person2_other_income,
+            person1_age,
+            person2_age,
+        )
+
+        # Get detailed tax breakdowns with split incomes
+        person1_details = calculate_total_tax(
+            splitting_result['person1_total_income'],
+            person1_age,
+            splitting_result['person1_allocated_pension'],
+        )
+        person2_details = calculate_total_tax(
+            splitting_result['person2_total_income'],
+            person2_age,
+            splitting_result['person2_allocated_pension'],
+        )
+
+        return {
+            'person1_tax': splitting_result['person1_tax'],
+            'person2_tax': splitting_result['person2_tax'],
+            'total_household_tax': splitting_result['total_household_tax'],
+            'income_splitting_applied': True,
+            'income_splitting_savings': splitting_result['tax_savings'],
+            'optimal_split_ratio': splitting_result['optimal_split_ratio'],
+            'person1_total_income': splitting_result['person1_total_income'],
+            'person2_total_income': splitting_result['person2_total_income'],
+            'person1_details': person1_details,
+            'person2_details': person2_details,
+        }
+    else:
+        # No income splitting - calculate taxes separately
+        person1_details = calculate_total_tax(person1_income, person1_age, person1_rrsp_withdrawal)
+        person2_details = calculate_total_tax(person2_income, person2_age, person2_rrsp_withdrawal)
+
+        return {
+            'person1_tax': person1_details['total_tax'],
+            'person2_tax': person2_details['total_tax'],
+            'total_household_tax': person1_details['total_tax'] + person2_details['total_tax'],
+            'income_splitting_applied': False,
+            'income_splitting_savings': 0.0,
+            'optimal_split_ratio': 0.0,
+            'person1_total_income': person1_income,
+            'person2_total_income': person2_income,
+            'person1_details': person1_details,
+            'person2_details': person2_details,
+        }
