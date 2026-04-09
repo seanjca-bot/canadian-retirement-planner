@@ -392,7 +392,7 @@ with tab1:
             hovermode='x unified',
             showlegend=True
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
         # Show key metrics
         col1, col2, col3 = st.columns(3)
@@ -474,7 +474,7 @@ with tab1:
             hovermode='x unified',
             showlegend=True
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
 # Tab 2: CPP/OAS Details
 with tab2:
@@ -496,9 +496,9 @@ with tab2:
         fig_cpp = px.bar(df_cpp, x='Start Age', y='Annual Benefit',
                         title='CPP Annual Benefit by Start Age')
         fig_cpp.update_yaxes(title='Annual Benefit ($)')
-        st.plotly_chart(fig_cpp, use_container_width=True)
+        st.plotly_chart(fig_cpp, width="stretch")
 
-        st.dataframe(df_cpp.style.format({'Annual Benefit': '${:,.0f}'}), use_container_width=True)
+        st.dataframe(df_cpp.style.format({'Annual Benefit': '${:,.0f}'}), width="stretch")
 
     with col2:
         st.subheader("OAS Clawback Analysis")
@@ -528,7 +528,7 @@ with tab2:
         fig_oas.update_layout(title=title_text,
                             xaxis_title='Annual Income ($)',
                             yaxis_title='Annual OAS Benefit ($)')
-        st.plotly_chart(fig_oas, use_container_width=True)
+        st.plotly_chart(fig_oas, width="stretch")
 
     # OAS Deferral Comparison
     st.markdown("---")
@@ -553,13 +553,13 @@ with tab2:
                               text='Bonus %')
         fig_oas_start.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
         fig_oas_start.update_yaxes(title='Annual Benefit ($)')
-        st.plotly_chart(fig_oas_start, use_container_width=True)
+        st.plotly_chart(fig_oas_start, width="stretch")
 
     with col4:
         st.dataframe(df_oas_start.style.format({
             'Annual Benefit': '${:,.0f}',
             'Bonus %': '{:.1f}%'
-        }), use_container_width=True)
+        }), width="stretch")
 
         st.info("💡 **Tip**: If you have significant RRSP/investment income, deferring OAS can help avoid or reduce clawback.")
 
@@ -632,7 +632,7 @@ with tab3:
             hovermode='x unified',
             title=f'Household Accounts ({couple_withdrawal_strategy.replace("_", " ").title()} Strategy)'
         )
-        st.plotly_chart(fig_couple_accounts, use_container_width=True)
+        st.plotly_chart(fig_couple_accounts, width="stretch")
 
         # Side-by-side account breakdown
         col1, col2 = st.columns(2)
@@ -707,7 +707,7 @@ with tab3:
             hovermode='x unified',
             title='Annual Withdrawals by Account Type and Spouse'
         )
-        st.plotly_chart(fig_couple_withdrawals, use_container_width=True)
+        st.plotly_chart(fig_couple_withdrawals, width="stretch")
 
         # Strategy explanation
         st.markdown("---")
@@ -808,7 +808,7 @@ with tab3:
         fig_te.add_trace(go.Scatter(x=tax_efficient['age'], y=tax_efficient['nonreg_balance'],
                                     name='Non-Reg', stackgroup='one', fillcolor='rgba(0, 204, 150, 0.7)'))
         fig_te.update_layout(xaxis_title='Age', yaxis_title='Balance ($)', hovermode='x unified', showlegend=False)
-        st.plotly_chart(fig_te, use_container_width=True)
+        st.plotly_chart(fig_te, width="stretch")
 
     with col2:
         st.subheader("🔴 RRSP First")
@@ -821,7 +821,7 @@ with tab3:
         fig_rrsp.add_trace(go.Scatter(x=rrsp_first['age'], y=rrsp_first['nonreg_balance'],
                                        name='Non-Reg', stackgroup='one', fillcolor='rgba(0, 204, 150, 0.7)'))
         fig_rrsp.update_layout(xaxis_title='Age', yaxis_title='Balance ($)', hovermode='x unified', showlegend=False)
-        st.plotly_chart(fig_rrsp, use_container_width=True)
+        st.plotly_chart(fig_rrsp, width="stretch")
 
     with col3:
         st.subheader("🟡 Proportional")
@@ -834,7 +834,7 @@ with tab3:
         fig_prop.add_trace(go.Scatter(x=proportional['age'], y=proportional['nonreg_balance'],
                                       name='Non-Reg', stackgroup='one', fillcolor='rgba(0, 204, 150, 0.7)'))
         fig_prop.update_layout(xaxis_title='Age', yaxis_title='Balance ($)', hovermode='x unified')
-        st.plotly_chart(fig_prop, use_container_width=True)
+        st.plotly_chart(fig_prop, width="stretch")
 
     # Withdrawal breakdown for selected strategy
     st.markdown("---")
@@ -866,7 +866,7 @@ with tab3:
                                      name='RRSP (100% Taxable)', marker_color='rgb(239, 85, 59)'))
     fig_withdrawals.update_layout(barmode='stack', xaxis_title='Age', yaxis_title='Withdrawal ($)',
                                  hovermode='x unified', title='Source of Annual Income by Account Type')
-    st.plotly_chart(fig_withdrawals, use_container_width=True)
+    st.plotly_chart(fig_withdrawals, width="stretch")
 
     # RRIF Minimum Withdrawal Table
     st.subheader("RRIF Minimum Withdrawal Rates")
@@ -950,7 +950,7 @@ with tab4:
             yaxis_title='Annual Tax ($)',
             hovermode='x unified'
         )
-        st.plotly_chart(fig_tax, use_container_width=True)
+        st.plotly_chart(fig_tax, width="stretch")
 
         # Income splitting savings over time
         if apply_income_splitting:
@@ -968,7 +968,7 @@ with tab4:
                 yaxis_title='Annual Savings ($)',
                 hovermode='x unified'
             )
-            st.plotly_chart(fig_splitting, use_container_width=True)
+            st.plotly_chart(fig_splitting, width="stretch")
 
         # Survivor Scenarios Analysis
         st.markdown("---")
@@ -1153,7 +1153,7 @@ with tab4:
                         yaxis_title='Balance ($)',
                         hovermode='x unified'
                     )
-                    st.plotly_chart(fig_survivor, use_container_width=True)
+                    st.plotly_chart(fig_survivor, width="stretch")
 
                     # Income comparison
                     st.subheader("Income Changes After Death")
@@ -1260,7 +1260,7 @@ with tab4:
                 yaxis_title='Portfolio Balance ($)',
                 hovermode='x unified'
             )
-            st.plotly_chart(fig_mc, use_container_width=True)
+            st.plotly_chart(fig_mc, width="stretch")
 
             # Safe withdrawal rate
             st.subheader("Safe Withdrawal Rate Analysis")
@@ -1373,7 +1373,7 @@ with tab5:
                     yaxis_title='Portfolio Balance ($)',
                     hovermode='x unified'
                 )
-                st.plotly_chart(fig_mc, use_container_width=True)
+                st.plotly_chart(fig_mc, width="stretch")
 
                 # Safe withdrawal rate
                 st.subheader("Safe Withdrawal Rate Analysis")
@@ -1449,7 +1449,7 @@ with tab5:
                                     xaxis_title='Age',
                                     yaxis_title='Taxes ($)',
                                     barmode='group')
-                st.plotly_chart(fig_tax, use_container_width=True)
+                st.plotly_chart(fig_tax, width="stretch")
 
                 # OAS comparison chart
                 fig_oas = go.Figure()
@@ -1461,7 +1461,7 @@ with tab5:
                                     xaxis_title='Age',
                                     yaxis_title='OAS Income ($)',
                                     hovermode='x unified')
-                st.plotly_chart(fig_oas, use_container_width=True)
+                st.plotly_chart(fig_oas, width="stretch")
 
                 # RRSP balance comparison
                 fig_rrsp = go.Figure()
@@ -1473,7 +1473,7 @@ with tab5:
                                      xaxis_title='Age',
                                      yaxis_title='RRSP Balance ($)',
                                      hovermode='x unified')
-                st.plotly_chart(fig_rrsp, use_container_width=True)
+                st.plotly_chart(fig_rrsp, width="stretch")
 
 # Footer
 st.markdown("---")
