@@ -8,6 +8,7 @@ from src.utils.constants import (
     RRIF_MIN_WITHDRAWAL_RATES,
     EXPECTED_RETURN_MEAN,
     INFLATION_RATE,
+    DEFAULT_PROVINCE,
 )
 
 
@@ -507,7 +508,7 @@ def project_couple_accounts(
     withdrawal_strategy: str = 'tax_optimized',
     investment_returns: list = None,
     inflation_rate: float = INFLATION_RATE,
-    province: str = 'Ontario',
+    province: str = DEFAULT_PROVINCE,
 ) -> dict:
     """
     Project couple's accounts over time with household optimization.
