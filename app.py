@@ -1505,5 +1505,12 @@ st.markdown("""
 <div style='text-align: center'>
     <p><small>This tool provides estimates based on 2026 tax rates and benefit amounts.
     Consult with a qualified financial advisor for personalized advice.</small></p>
+    <p style='margin-top: 20px;'>
+        <strong>💬 Feedback & Feature Requests</strong><br>
+        <small>We'd love to hear from you! Send your feedback, suggestions, or feature requests to:</small><br>
+        <a href='mailto:canadianretireplan@gmail.com' style='color: #1f77b4; text-decoration: none; font-weight: bold;'>
+            📧 canadianretireplan@gmail.com
+        </a>
+    </p>
 </div>
 """, unsafe_allow_html=True)
