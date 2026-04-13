@@ -71,6 +71,14 @@ The application uses current federal and provincial tax rates for all Canadian p
 - Prince Edward Island (PE)
 - Newfoundland and Labrador (NL)
 
+## Feedback & Feature Requests
+
+We'd love to hear from you! If you have feedback, suggestions, or feature requests, please contact us at:
+
+📧 **canadianretireplan@gmail.com**
+
+Your input helps us improve the Canadian Retirement Planner for all users.
+
 ## License
 
 MIT License
