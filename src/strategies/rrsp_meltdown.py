@@ -13,6 +13,7 @@ from src.utils.constants import (
     RRIF_CONVERSION_AGE,
     OAS_CLAWBACK_THRESHOLD,
     INFLATION_RATE,
+    DEFAULT_PROVINCE,
 )
 
 
@@ -58,6 +59,7 @@ def simulate_meltdown_strategy(
     investment_return: float = 0.06,
     annual_spending: float = 60000,
     oas_start_age: int = 65,
+    province: str = DEFAULT_PROVINCE,
 ) -> dict:
     """
     Simulate RRSP meltdown strategy over retirement.
@@ -160,7 +162,7 @@ def simulate_meltdown_strategy(
 
         # Calculate tax on taxable income (TFSA withdrawals not taxed)
         taxable_income = total_income_before_tfsa + oas_annual
-        tax_calc = calculate_total_tax(taxable_income, age, rrsp_withdrawal)
+        tax_calc = calculate_total_tax(taxable_income, age, rrsp_withdrawal, province=province)
         total_tax = tax_calc['total_tax']
 
         # After-tax income including OAS
@@ -210,6 +212,7 @@ def compare_meltdown_vs_traditional(
     investment_return: float = 0.06,
     annual_spending: float = 60000,
     oas_start_age: int = 65,
+    province: str = DEFAULT_PROVINCE,
 ) -> dict:
     """
     Compare RRSP meltdown strategy vs traditional approach.
@@ -236,6 +239,7 @@ def compare_meltdown_vs_traditional(
         investment_return,
         annual_spending,
         oas_start_age,
+        province,
     )
 
     # Simulate traditional strategy (minimal withdrawals)
@@ -251,6 +255,7 @@ def compare_meltdown_vs_traditional(
         investment_return=investment_return,
         annual_spending=annual_spending,
         oas_start_age=oas_start_age,
+        province=province,
     )
 
     # Calculate lifetime totals

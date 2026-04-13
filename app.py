@@ -1,7 +1,7 @@
 """
-Ontario Retirement Planner - Streamlit Application
+Canadian Retirement Planner - Streamlit Application
 
-A comprehensive retirement planning tool for Ontario residents.
+A comprehensive retirement planning tool for Canadian residents across all provinces.
 """
 
 import streamlit as st
@@ -20,18 +20,39 @@ from src.models.household import Person, Household
 
 # Page configuration
 st.set_page_config(
-    page_title="Ontario Retirement Planner",
+    page_title="Canadian Retirement Planner",
     page_icon="🏦",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # Title
-st.title("🏦 Ontario Retirement Planner")
-st.markdown("Plan your retirement with CPP/OAS projections, tax optimization, and Monte Carlo simulations")
+st.title("🏦 Canadian Retirement Planner")
+st.markdown("Plan your retirement with CPP/OAS projections, provincial tax optimization, and Monte Carlo simulations")
 
 # Sidebar - User Inputs
 st.sidebar.header("Your Information")
+
+# Province Selection
+province = st.sidebar.selectbox(
+    "Province/Territory",
+    options=[
+        'Ontario',
+        'British Columbia',
+        'Alberta',
+        'Saskatchewan',
+        'Manitoba',
+        'Quebec',
+        'New Brunswick',
+        'Nova Scotia',
+        'Prince Edward Island',
+        'Newfoundland and Labrador'
+    ],
+    index=0,  # Default to Ontario
+    help="Select your province for accurate tax calculations"
+)
+
+st.sidebar.markdown("---")
 
 # Planning Mode Toggle
 planning_mode = st.sidebar.radio(
@@ -322,6 +343,7 @@ with tab1:
             couple_withdrawal_strategy,
             investment_returns=[expected_return] * projection_years,
             inflation_rate=inflation_rate,
+            province=province,
         )
 
         # Plot household portfolio as stacked area
@@ -1078,6 +1100,7 @@ with tab4:
                         survivor_oas_monthly,
                         investment_return=expected_return,
                         inflation_rate=inflation_rate,
+                        province=province,
                     )
 
                     # Display results
@@ -1415,7 +1438,8 @@ with tab5:
                     years_in_canada,
                     expected_return,
                     annual_spending,
-                    oas_start_age
+                    oas_start_age,
+                    province
                 )
 
                 # Display comparison metrics

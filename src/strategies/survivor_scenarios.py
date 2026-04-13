@@ -12,7 +12,7 @@ from typing import Dict, Optional, List
 from src.calculations.cpp_oas import calculate_survivor_benefits, calculate_oas_benefit
 from src.calculations.rrsp_tfsa import RRSPAccount, TFSAAccount, NonRegisteredAccount, RRIF_CONVERSION_AGE
 from src.calculations.taxes import calculate_total_tax
-from src.utils.constants import EXPECTED_RETURN_MEAN
+from src.utils.constants import EXPECTED_RETURN_MEAN, DEFAULT_PROVINCE
 
 
 def project_survivor_scenario(
@@ -27,6 +27,7 @@ def project_survivor_scenario(
     survivor_oas_monthly: float,
     investment_return: float = EXPECTED_RETURN_MEAN,
     inflation_rate: float = 0.02,
+    province: str = DEFAULT_PROVINCE,
 ) -> dict:
     """
     Project financial situation for survivor after spouse passes.
@@ -87,6 +88,7 @@ def project_survivor_scenario(
             death_year_taxable_income,
             deceased_person_params.get('age_at_death', death_age),
             death_year_taxable_income,
+            province=province,
         )['total_tax']
 
     # Asset transfers to survivor
@@ -200,7 +202,7 @@ def project_survivor_scenario(
         )
 
         # Calculate tax
-        tax_calc = calculate_total_tax(total_income, survivor_age, rrsp_withdrawal)
+        tax_calc = calculate_total_tax(total_income, survivor_age, rrsp_withdrawal, province=province)
         survivor_tax = tax_calc['total_tax']
         survivor_after_tax = total_income - survivor_tax
 
@@ -273,6 +275,7 @@ def analyze_survivor_scenarios(
     household_spending: float,
     survivor_spending_ratio: float = 0.70,
     death_ages: List[int] = None,
+    province: str = DEFAULT_PROVINCE,
 ) -> dict:
     """
     Analyze multiple survivor scenarios for sensitivity analysis.
@@ -342,6 +345,7 @@ def analyze_survivor_scenarios(
             person1_oas / 12,
             person2_cpp / 12,
             person2_oas / 12,
+            province=province,
         )
 
         scenarios['person1_dies_first'].append({
@@ -396,6 +400,7 @@ def analyze_survivor_scenarios(
             person2_oas / 12,
             person1_cpp / 12,
             person1_oas / 12,
+            province=province,
         )
 
         scenarios['person2_dies_first'].append({

@@ -1,16 +1,19 @@
 """
-Federal and Ontario tax calculations for retirement income.
+Federal and provincial tax calculations for retirement income.
 """
 
 from src.utils.constants import (
     FEDERAL_TAX_BRACKETS,
-    ONTARIO_TAX_BRACKETS,
+    PROVINCIAL_TAX_BRACKETS,
     FEDERAL_BASIC_PERSONAL_AMOUNT,
-    ONTARIO_BASIC_PERSONAL_AMOUNT,
+    PROVINCIAL_BASIC_PERSONAL_AMOUNT,
+    PROVINCIAL_AGE_AMOUNT,
+    PROVINCIAL_PENSION_INCOME_AMOUNT,
     AGE_AMOUNT_CREDIT,
     AGE_AMOUNT_THRESHOLD,
     AGE_AMOUNT_REDUCTION_RATE,
     PENSION_INCOME_AMOUNT,
+    DEFAULT_PROVINCE,
 )
 
 
@@ -103,48 +106,58 @@ def calculate_federal_tax(
     }
 
 
-def calculate_ontario_tax(
+def calculate_provincial_tax(
     total_income: float,
     age: int,
     rrsp_withdrawal: float = 0,
+    province: str = DEFAULT_PROVINCE,
 ) -> dict:
     """
-    Calculate Ontario provincial income tax and credits.
+    Calculate provincial income tax and credits.
 
     Args:
         total_income: Total annual income
         age: Age (for age amount credit)
         rrsp_withdrawal: RRSP/RRIF withdrawal amount
+        province: Province name (default: Ontario)
 
     Returns:
         Dictionary with tax breakdown
     """
-    # Basic personal amount credit
-    bpa_credit = ONTARIO_BASIC_PERSONAL_AMOUNT * 0.0505  # 5.05% Ontario rate
+    # Get province-specific values
+    brackets = PROVINCIAL_TAX_BRACKETS[province]
+    bpa = PROVINCIAL_BASIC_PERSONAL_AMOUNT[province]
+    age_amount = PROVINCIAL_AGE_AMOUNT[province]
+    pension_income_amount = PROVINCIAL_PENSION_INCOME_AMOUNT[province]
 
-    # Ontario age amount credit (for 65+)
-    ontario_age_amount = 5537  # 2026 amount
-    ontario_age_threshold = 42335
+    # Get the lowest tax rate for the province (for credit calculations)
+    lowest_rate = brackets[0][1]
+
+    # Basic personal amount credit
+    bpa_credit = bpa * lowest_rate
+
+    # Provincial age amount credit (for 65+)
+    provincial_age_threshold = 42335  # Same threshold across provinces
     age_credit = 0.0
     if age >= 65:
-        if total_income <= ontario_age_threshold:
-            age_credit = ontario_age_amount * 0.0505
-        elif total_income < ontario_age_threshold + (ontario_age_amount / 0.15):
+        if total_income <= provincial_age_threshold:
+            age_credit = age_amount * lowest_rate
+        elif total_income < provincial_age_threshold + (age_amount / 0.15):
             # Reduced age amount
-            excess = total_income - ontario_age_threshold
+            excess = total_income - provincial_age_threshold
             reduction = excess * 0.15
-            reduced_amount = max(ontario_age_amount - reduction, 0)
-            age_credit = reduced_amount * 0.0505
+            reduced_amount = max(age_amount - reduction, 0)
+            age_credit = reduced_amount * lowest_rate
         # else: fully phased out
 
-    # Ontario pension income credit
+    # Provincial pension income credit
     pension_credit = 0.0
     if age >= 65 and rrsp_withdrawal > 0:
-        eligible_amount = min(rrsp_withdrawal, 1605)  # Ontario pension income amount
-        pension_credit = eligible_amount * 0.0505
+        eligible_amount = min(rrsp_withdrawal, pension_income_amount)
+        pension_credit = eligible_amount * lowest_rate
 
     # Calculate tax on brackets
-    gross_tax = calculate_bracket_tax(total_income, ONTARIO_TAX_BRACKETS)
+    gross_tax = calculate_bracket_tax(total_income, brackets)
 
     # Apply credits
     total_credits = bpa_credit + age_credit + pension_credit
@@ -160,57 +173,76 @@ def calculate_ontario_tax(
     }
 
 
+# For backward compatibility
+def calculate_ontario_tax(
+    total_income: float,
+    age: int,
+    rrsp_withdrawal: float = 0,
+) -> dict:
+    """
+    Calculate Ontario provincial income tax and credits.
+
+    Deprecated: Use calculate_provincial_tax with province='Ontario' instead.
+    """
+    return calculate_provincial_tax(total_income, age, rrsp_withdrawal, 'Ontario')
+
+
 def calculate_total_tax(
     total_income: float,
     age: int,
     rrsp_withdrawal: float = 0,
     eligible_pension_income: float = 0,
+    province: str = DEFAULT_PROVINCE,
 ) -> dict:
     """
-    Calculate combined federal and Ontario tax.
+    Calculate combined federal and provincial tax.
 
     Args:
         total_income: Total annual income
         age: Age
         rrsp_withdrawal: RRSP/RRIF withdrawal amount
         eligible_pension_income: Other eligible pension income
+        province: Province name (default: Ontario)
 
     Returns:
         Dictionary with complete tax breakdown
     """
     federal = calculate_federal_tax(total_income, age, rrsp_withdrawal, eligible_pension_income)
-    ontario = calculate_ontario_tax(total_income, age, rrsp_withdrawal)
+    provincial = calculate_provincial_tax(total_income, age, rrsp_withdrawal, province)
 
-    combined_tax = federal['net_tax'] + ontario['net_tax']
+    combined_tax = federal['net_tax'] + provincial['net_tax']
     effective_rate = (combined_tax / total_income * 100) if total_income > 0 else 0
 
     return {
         'total_income': total_income,
         'federal_tax': federal['net_tax'],
-        'ontario_tax': ontario['net_tax'],
+        'provincial_tax': provincial['net_tax'],
+        'ontario_tax': provincial['net_tax'],  # For backward compatibility
         'total_tax': combined_tax,
         'after_tax_income': total_income - combined_tax,
         'effective_rate': effective_rate,
         'federal_details': federal,
-        'ontario_details': ontario,
+        'provincial_details': provincial,
+        'ontario_details': provincial,  # For backward compatibility
     }
 
 
-def calculate_marginal_rate(income: float, age: int = 65) -> float:
+def calculate_marginal_rate(income: float, age: int = 65, province: str = DEFAULT_PROVINCE) -> float:
     """
     Calculate marginal tax rate at a given income level.
 
     Args:
         income: Current income level
         age: Age (affects available credits)
+        province: Province name (default: Ontario)
 
     Returns:
         Marginal tax rate as a decimal
     """
     # Test with small increment
     increment = 1000
-    tax_at_income = calculate_total_tax(income, age)['total_tax']
-    tax_at_higher = calculate_total_tax(income + increment, age)['total_tax']
+    tax_at_income = calculate_total_tax(income, age, province=province)['total_tax']
+    tax_at_higher = calculate_total_tax(income + increment, age, province=province)['total_tax']
 
     marginal_rate = (tax_at_higher - tax_at_income) / increment
     return marginal_rate
@@ -220,6 +252,7 @@ def project_lifetime_taxes(
     ages: list,
     incomes: list,
     rrsp_withdrawals: list = None,
+    province: str = DEFAULT_PROVINCE,
 ) -> dict:
     """
     Project taxes over multiple years.
@@ -228,6 +261,7 @@ def project_lifetime_taxes(
         ages: List of ages for each year
         incomes: List of total income for each year
         rrsp_withdrawals: List of RRSP withdrawals for each year
+        province: Province name (default: Ontario)
 
     Returns:
         Dictionary with yearly tax projections
@@ -239,7 +273,8 @@ def project_lifetime_taxes(
         'age': [],
         'income': [],
         'federal_tax': [],
-        'ontario_tax': [],
+        'provincial_tax': [],
+        'ontario_tax': [],  # For backward compatibility
         'total_tax': [],
         'after_tax_income': [],
         'effective_rate': [],
@@ -249,12 +284,13 @@ def project_lifetime_taxes(
         income = incomes[i]
         rrsp_withdrawal = rrsp_withdrawals[i] if i < len(rrsp_withdrawals) else 0
 
-        tax_calc = calculate_total_tax(income, age, rrsp_withdrawal)
+        tax_calc = calculate_total_tax(income, age, rrsp_withdrawal, province=province)
 
         projections['age'].append(age)
         projections['income'].append(income)
         projections['federal_tax'].append(tax_calc['federal_tax'])
-        projections['ontario_tax'].append(tax_calc['ontario_tax'])
+        projections['provincial_tax'].append(tax_calc['provincial_tax'])
+        projections['ontario_tax'].append(tax_calc['provincial_tax'])  # For backward compatibility
         projections['total_tax'].append(tax_calc['total_tax'])
         projections['after_tax_income'].append(tax_calc['after_tax_income'])
         projections['effective_rate'].append(tax_calc['effective_rate'])
@@ -269,6 +305,7 @@ def calculate_pension_income_splitting(
     person2_other_income: float,
     person1_age: int,
     person2_age: int,
+    province: str = DEFAULT_PROVINCE,
 ) -> dict:
     """
     Calculate optimal pension income splitting for couples to minimize household tax.
@@ -286,6 +323,7 @@ def calculate_pension_income_splitting(
         person2_other_income: Other income for person 2 (CPP, OAS, employment)
         person1_age: Age of person 1
         person2_age: Age of person 2
+        province: Province name (default: Ontario)
 
     Returns:
         Dictionary with:
@@ -304,8 +342,8 @@ def calculate_pension_income_splitting(
         # Not eligible for income splitting
         person1_total = person1_pension_income + person1_other_income
         person2_total = person2_pension_income + person2_other_income
-        person1_tax_calc = calculate_total_tax(person1_total, person1_age, person1_pension_income)
-        person2_tax_calc = calculate_total_tax(person2_total, person2_age, person2_pension_income)
+        person1_tax_calc = calculate_total_tax(person1_total, person1_age, person1_pension_income, province=province)
+        person2_tax_calc = calculate_total_tax(person2_total, person2_age, person2_pension_income, province=province)
 
         return {
             'optimal_split_ratio': 0.0,
@@ -323,8 +361,8 @@ def calculate_pension_income_splitting(
     # Calculate baseline tax (no splitting)
     person1_baseline_income = person1_pension_income + person1_other_income
     person2_baseline_income = person2_pension_income + person2_other_income
-    person1_baseline_tax = calculate_total_tax(person1_baseline_income, person1_age, person1_pension_income)['total_tax']
-    person2_baseline_tax = calculate_total_tax(person2_baseline_income, person2_age, person2_pension_income)['total_tax']
+    person1_baseline_tax = calculate_total_tax(person1_baseline_income, person1_age, person1_pension_income, province=province)['total_tax']
+    person2_baseline_tax = calculate_total_tax(person2_baseline_income, person2_age, person2_pension_income, province=province)['total_tax']
     baseline_total_tax = person1_baseline_tax + person2_baseline_tax
 
     # Binary search for optimal split ratio
@@ -352,8 +390,8 @@ def calculate_pension_income_splitting(
         person1_total = person1_pension_after_split + person1_other_income
         person2_total = person2_pension_after_split + person2_other_income
 
-        person1_tax = calculate_total_tax(person1_total, person1_age, person1_pension_after_split)['total_tax']
-        person2_tax = calculate_total_tax(person2_total, person2_age, person2_pension_after_split)['total_tax']
+        person1_tax = calculate_total_tax(person1_total, person1_age, person1_pension_after_split, province=province)['total_tax']
+        person2_tax = calculate_total_tax(person2_total, person2_age, person2_pension_after_split, province=province)['total_tax']
         total_tax = person1_tax + person2_tax
 
         if total_tax < best_total_tax:
@@ -392,6 +430,7 @@ def calculate_household_tax(
     person2_age: int,
     person2_rrsp_withdrawal: float,
     apply_income_splitting: bool = True,
+    province: str = DEFAULT_PROVINCE,
 ) -> dict:
     """
     Calculate combined household tax with optional income splitting.
@@ -404,6 +443,7 @@ def calculate_household_tax(
         person2_age: Age of person 2
         person2_rrsp_withdrawal: RRSP/RRIF withdrawal for person 2
         apply_income_splitting: Whether to apply income splitting optimization
+        province: Province name (default: Ontario)
 
     Returns:
         Dictionary with:
@@ -428,6 +468,7 @@ def calculate_household_tax(
             person2_other_income,
             person1_age,
             person2_age,
+            province,
         )
 
         # Get detailed tax breakdowns with split incomes
@@ -435,11 +476,13 @@ def calculate_household_tax(
             splitting_result['person1_total_income'],
             person1_age,
             splitting_result['person1_allocated_pension'],
+            province=province,
         )
         person2_details = calculate_total_tax(
             splitting_result['person2_total_income'],
             person2_age,
             splitting_result['person2_allocated_pension'],
+            province=province,
         )
 
         return {
@@ -456,8 +499,8 @@ def calculate_household_tax(
         }
     else:
         # No income splitting - calculate taxes separately
-        person1_details = calculate_total_tax(person1_income, person1_age, person1_rrsp_withdrawal)
-        person2_details = calculate_total_tax(person2_income, person2_age, person2_rrsp_withdrawal)
+        person1_details = calculate_total_tax(person1_income, person1_age, person1_rrsp_withdrawal, province=province)
+        person2_details = calculate_total_tax(person2_income, person2_age, person2_rrsp_withdrawal, province=province)
 
         return {
             'person1_tax': person1_details['total_tax'],

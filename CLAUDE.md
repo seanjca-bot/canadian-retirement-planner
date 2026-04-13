@@ -4,12 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Ontario Retirement Planner is a comprehensive financial planning tool for retirement planning in Ontario, Canada. It's a Python-based Streamlit web application that models:
+Canadian Retirement Planner is a comprehensive financial planning tool for retirement planning across all Canadian provinces. It's a Python-based Streamlit web application that models:
 - CPP (Canada Pension Plan) and OAS (Old Age Security) benefits
 - RRSP/TFSA account growth and withdrawal strategies
-- Federal and Ontario tax calculations with senior credits
+- Federal and provincial tax calculations (all 10 provinces) with senior credits
 - Monte Carlo simulations for retirement success probability
 - RRSP meltdown strategy optimization to minimize lifetime taxes
+- Couple planning with household tax optimization
 
 ## Commands
 
@@ -68,11 +69,13 @@ pylint src/
 - RRIF minimum withdrawal rates from government table
 - `project_registered_accounts()`: Simulates accounts with different withdrawal strategies
 
-**taxes.py**: Federal and Ontario tax calculations
-- Progressive tax brackets for both jurisdictions
-- Senior-specific credits: Basic Personal Amount, Age Amount, Pension Income Amount
+**taxes.py**: Federal and provincial tax calculations
+- Progressive tax brackets for federal and all 10 provinces
+- Province-specific credits: Basic Personal Amount, Age Amount, Pension Income Amount
 - Age Amount credit phases out starting at $42,335 income
 - `calculate_total_tax()`: Combined federal + provincial tax with all credits
+- `calculate_provincial_tax()`: Handles province-specific tax calculations
+- Default province is Ontario, configurable via province parameter
 
 **monte_carlo.py**: Probability-based retirement analysis
 - Generates return scenarios using normal distribution (mean 6%, std dev 12%)
@@ -89,11 +92,14 @@ pylint src/
 ### Constants (`src/utils/constants.py`)
 
 All Canadian tax rates, benefit amounts, and contribution limits for 2026:
-- Federal/Ontario tax brackets
+- Federal tax brackets
+- Provincial tax brackets for all 10 provinces (ON, BC, AB, SK, MB, QC, NB, NS, PE, NL)
+- Provincial basic personal amounts and credits
 - CPP maximum ($1,364.60/month at 65)
 - OAS maximum ($718.33/month at 65, +10% at 75)
 - RRSP/TFSA limits
 - RRIF minimum withdrawal rates table
+- DEFAULT_PROVINCE constant (Ontario)
 
 **Important**: Update these values annually when CRA releases new tax year information.
 
@@ -142,15 +148,18 @@ For new calculation features:
 
 ### Tax Calculation Accuracy
 Tax calculations include:
-- Progressive brackets (federal + Ontario)
-- Basic Personal Amount credit
-- Age Amount credit (65+, income-tested)
-- Pension Income Amount credit ($2,000 federal, $1,605 Ontario)
+- Progressive brackets (federal + all 10 provinces)
+- Basic Personal Amount credit (province-specific)
+- Age Amount credit (65+, income-tested, province-specific)
+- Pension Income Amount credit (federal + province-specific)
+- Income splitting for couples (65+)
+
+Features already implemented:
+- Capital gains (50% inclusion rate) for non-registered accounts
+- Spousal pension income splitting
 
 Missing features to consider adding:
-- Dividend tax credit
-- Capital gains (50% inclusion rate)
-- Spousal income splitting
+- Dividend tax credit for eligible/non-eligible dividends
 - GIS (Guaranteed Income Supplement) for low-income seniors
 
 ### Performance Considerations
@@ -167,11 +176,13 @@ Monte Carlo simulations are computationally intensive:
 2. Add to strategy comparison in app.py Tab 3
 3. Document strategy rationale and use cases
 
-### Updating CPP/OAS Rates
+### Updating CPP/OAS Rates and Provincial Tax Brackets
 Government announces rates in October-November for next year:
-1. Update constants in `constants.py`
-2. Check for formula changes (rare but happens)
-3. Test with edge cases (maximum benefits, clawback thresholds)
+1. Update constants in `constants.py` for federal values
+2. Update PROVINCIAL_TAX_BRACKETS, PROVINCIAL_BASIC_PERSONAL_AMOUNT, etc. for each province
+3. Check for formula changes (rare but happens)
+4. Test with edge cases (maximum benefits, clawback thresholds)
+5. Verify province-specific age amounts and pension income amounts
 
 ### Adding Charts/Visualizations
 Use Plotly for interactive charts (already imported in app.py):

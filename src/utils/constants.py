@@ -74,20 +74,128 @@ FEDERAL_TAX_BRACKETS = [
     (float('inf'), 0.33)  # 33% on income over $246,752
 ]
 
-# Ontario Tax Brackets (2026)
-ONTARIO_TAX_BRACKETS = [
-    (51446, 0.0505),    # 5.05% on first $51,446
-    (102894, 0.0915),   # 9.15% on next $51,448
-    (150000, 0.1116),   # 11.16% on next $47,106
-    (220000, 0.1216),   # 12.16% on next $70,000
-    (float('inf'), 0.1316)  # 13.16% on income over $220,000
-]
+# Provincial Tax Brackets (2026)
+PROVINCIAL_TAX_BRACKETS = {
+    'Ontario': [
+        (51446, 0.0505),    # 5.05% on first $51,446
+        (102894, 0.0915),   # 9.15% on next $51,448
+        (150000, 0.1116),   # 11.16% on next $47,106
+        (220000, 0.1216),   # 12.16% on next $70,000
+        (float('inf'), 0.1316)  # 13.16% on income over $220,000
+    ],
+    'British Columbia': [
+        (47937, 0.0506),    # 5.06% on first $47,937
+        (95875, 0.0770),    # 7.70% on next $47,938
+        (110076, 0.1050),   # 10.50% on next $14,201
+        (133664, 0.1229),   # 12.29% on next $23,588
+        (181232, 0.1470),   # 14.70% on next $47,568
+        (252752, 0.1680),   # 16.80% on next $71,520
+        (float('inf'), 0.2050)  # 20.50% on income over $252,752
+    ],
+    'Alberta': [
+        (148269, 0.10),     # 10% on first $148,269
+        (177922, 0.12),     # 12% on next $29,653
+        (237230, 0.13),     # 13% on next $59,308
+        (355845, 0.14),     # 14% on next $118,615
+        (float('inf'), 0.15)  # 15% on income over $355,845
+    ],
+    'Saskatchewan': [
+        (52057, 0.1050),    # 10.50% on first $52,057
+        (148734, 0.1250),   # 12.50% on next $96,677
+        (float('inf'), 0.1450)  # 14.50% on income over $148,734
+    ],
+    'Manitoba': [
+        (47000, 0.1080),    # 10.80% on first $47,000
+        (100000, 0.1275),   # 12.75% on next $53,000
+        (float('inf'), 0.1740)  # 17.40% on income over $100,000
+    ],
+    'Quebec': [
+        (51780, 0.14),      # 14% on first $51,780
+        (103545, 0.19),     # 19% on next $51,765
+        (126000, 0.24),     # 24% on next $22,455
+        (float('inf'), 0.2575)  # 25.75% on income over $126,000
+    ],
+    'New Brunswick': [
+        (49958, 0.0968),    # 9.68% on first $49,958
+        (99916, 0.1482),    # 14.82% on next $49,958
+        (185064, 0.1652),   # 16.52% on next $85,148
+        (float('inf'), 0.1784)  # 17.84% on income over $185,064
+    ],
+    'Nova Scotia': [
+        (29590, 0.0879),    # 8.79% on first $29,590
+        (59180, 0.1495),    # 14.95% on next $29,590
+        (93000, 0.1667),    # 16.67% on next $33,820
+        (150000, 0.1750),   # 17.50% on next $57,000
+        (float('inf'), 0.21)  # 21% on income over $150,000
+    ],
+    'Prince Edward Island': [
+        (32656, 0.0980),    # 9.80% on first $32,656
+        (64313, 0.1380),    # 13.80% on next $31,657
+        (105000, 0.1670),   # 16.70% on next $40,687
+        (float('inf'), 0.1870)  # 18.70% on income over $105,000
+    ],
+    'Newfoundland and Labrador': [
+        (43198, 0.0870),    # 8.70% on first $43,198
+        (86395, 0.1450),    # 14.50% on next $43,197
+        (154244, 0.1580),   # 15.80% on next $67,849
+        (215943, 0.1730),   # 17.30% on next $61,699
+        (float('inf'), 0.2130)  # 21.30% on income over $215,943
+    ],
+}
+
+# For backward compatibility
+ONTARIO_TAX_BRACKETS = PROVINCIAL_TAX_BRACKETS['Ontario']
 
 # Federal Basic Personal Amount (2026)
 FEDERAL_BASIC_PERSONAL_AMOUNT = 15705
 
-# Ontario Basic Personal Amount (2026)
-ONTARIO_BASIC_PERSONAL_AMOUNT = 11865
+# Provincial Basic Personal Amount (2026)
+PROVINCIAL_BASIC_PERSONAL_AMOUNT = {
+    'Ontario': 11865,
+    'British Columbia': 12580,
+    'Alberta': 21885,
+    'Saskatchewan': 17661,
+    'Manitoba': 15780,
+    'Quebec': 18056,
+    'New Brunswick': 13044,
+    'Nova Scotia': 8481,
+    'Prince Edward Island': 13500,
+    'Newfoundland and Labrador': 10382,
+}
+
+# For backward compatibility
+ONTARIO_BASIC_PERSONAL_AMOUNT = PROVINCIAL_BASIC_PERSONAL_AMOUNT['Ontario']
+
+# Provincial Age Amount (2026) - for seniors 65+
+PROVINCIAL_AGE_AMOUNT = {
+    'Ontario': 5537,
+    'British Columbia': 5140,
+    'Alberta': 5649,
+    'Saskatchewan': 5463,
+    'Manitoba': 4740,
+    'Quebec': 3308,
+    'New Brunswick': 5514,
+    'Nova Scotia': 5377,
+    'Prince Edward Island': 4544,
+    'Newfoundland and Labrador': 5077,
+}
+
+# Provincial Pension Income Amount (2026)
+PROVINCIAL_PENSION_INCOME_AMOUNT = {
+    'Ontario': 1605,
+    'British Columbia': 1000,
+    'Alberta': 1425,
+    'Saskatchewan': 1000,
+    'Manitoba': 1000,
+    'Quebec': 2975,
+    'New Brunswick': 1000,
+    'Nova Scotia': 1365,
+    'Prince Edward Island': 1000,
+    'Newfoundland and Labrador': 1000,
+}
+
+# Default province
+DEFAULT_PROVINCE = 'Ontario'
 
 # Age Amount Tax Credit (Federal)
 AGE_AMOUNT_CREDIT = 8396  # For seniors 65+

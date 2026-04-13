@@ -7,7 +7,7 @@ household tax and preserve government benefits.
 
 from typing import Dict, Tuple
 from src.calculations.taxes import calculate_household_tax
-from src.utils.constants import OAS_CLAWBACK_THRESHOLD
+from src.utils.constants import OAS_CLAWBACK_THRESHOLD, DEFAULT_PROVINCE
 
 
 def calculate_couple_withdrawal_strategy(
@@ -25,6 +25,7 @@ def calculate_couple_withdrawal_strategy(
     person1_rrif_minimum: float = 0.0,
     person2_rrif_minimum: float = 0.0,
     strategy: str = 'tax_optimized',
+    province: str = DEFAULT_PROVINCE,
 ) -> dict:
     """
     Determine optimal withdrawal amounts from each spouse's accounts.
@@ -48,6 +49,7 @@ def calculate_couple_withdrawal_strategy(
             - 'oas_clawback_aware': Keep both spouses below OAS clawback threshold
             - 'balanced': Proportional withdrawals maintaining relative account sizes
             - 'rrsp_meltdown': Prioritize RRSP withdrawals to minimize lifetime taxes
+        province: Province for tax calculations (default: Ontario)
 
     Returns:
         Dictionary with optimal withdrawal amounts and tax information
@@ -60,6 +62,7 @@ def calculate_couple_withdrawal_strategy(
             target_household_spending,
             person1_other_income, person2_other_income,
             person1_rrif_minimum, person2_rrif_minimum,
+            province,
         )
     elif strategy == 'oas_clawback_aware':
         return _oas_clawback_aware_strategy(
@@ -69,6 +72,7 @@ def calculate_couple_withdrawal_strategy(
             target_household_spending,
             person1_other_income, person2_other_income,
             person1_rrif_minimum, person2_rrif_minimum,
+            province,
         )
     elif strategy == 'balanced':
         return _balanced_strategy(
@@ -78,6 +82,7 @@ def calculate_couple_withdrawal_strategy(
             target_household_spending,
             person1_other_income, person2_other_income,
             person1_rrif_minimum, person2_rrif_minimum,
+            province,
         )
     elif strategy == 'rrsp_meltdown':
         return _rrsp_meltdown_strategy(
@@ -87,6 +92,7 @@ def calculate_couple_withdrawal_strategy(
             target_household_spending,
             person1_other_income, person2_other_income,
             person1_rrif_minimum, person2_rrif_minimum,
+            province,
         )
     else:
         raise ValueError(f"Unknown withdrawal strategy: {strategy}")
@@ -106,6 +112,7 @@ def _tax_optimized_strategy(
     person2_other_income: float,
     person1_rrif_minimum: float,
     person2_rrif_minimum: float,
+    province: str,
 ) -> dict:
     """
     Tax-optimized withdrawal strategy: minimize household tax.
@@ -203,6 +210,7 @@ def _tax_optimized_strategy(
         person1_total_income, person1_age, person1_rrsp_withdrawal,
         person2_total_income, person2_age, person2_rrsp_withdrawal,
         apply_income_splitting=True,
+        province=province,
     )
 
     return {
@@ -243,6 +251,7 @@ def _oas_clawback_aware_strategy(
     person2_other_income: float,
     person1_rrif_minimum: float,
     person2_rrif_minimum: float,
+    province: str,
 ) -> dict:
     """
     OAS clawback-aware strategy: try to keep both spouses below OAS threshold.
@@ -349,6 +358,7 @@ def _oas_clawback_aware_strategy(
         person1_total_income, person1_age, person1_rrsp_withdrawal,
         person2_total_income, person2_age, person2_rrsp_withdrawal,
         apply_income_splitting=True,
+        province=province,
     )
 
     return {
@@ -393,6 +403,7 @@ def _balanced_strategy(
     person2_other_income: float,
     person1_rrif_minimum: float,
     person2_rrif_minimum: float,
+    province: str,
 ) -> dict:
     """
     Balanced strategy: withdraw proportionally from both spouses' accounts.
@@ -445,6 +456,7 @@ def _balanced_strategy(
         person1_total_income, person1_age, person1_rrsp_withdrawal,
         person2_total_income, person2_age, person2_rrsp_withdrawal,
         apply_income_splitting=True,
+        province=province,
     )
 
     return {
@@ -485,6 +497,7 @@ def _rrsp_meltdown_strategy(
     person2_other_income: float,
     person1_rrif_minimum: float,
     person2_rrif_minimum: float,
+    province: str,
 ) -> dict:
     """
     RRSP meltdown strategy: Prioritize RRSP withdrawals to minimize lifetime taxes.
@@ -592,6 +605,7 @@ def _rrsp_meltdown_strategy(
         person1_total_income, person1_age, person1_rrsp_withdrawal,
         person2_total_income, person2_age, person2_rrsp_withdrawal,
         apply_income_splitting=True,
+        province=province,
     )
 
     return {

@@ -507,6 +507,7 @@ def project_couple_accounts(
     withdrawal_strategy: str = 'tax_optimized',
     investment_returns: list = None,
     inflation_rate: float = INFLATION_RATE,
+    province: str = 'Ontario',
 ) -> dict:
     """
     Project couple's accounts over time with household optimization.
@@ -667,6 +668,7 @@ def project_couple_accounts(
                 person1_rrif_min,
                 person2_rrif_min,
                 withdrawal_strategy,
+                province,
             )
 
             # Extract withdrawal amounts
